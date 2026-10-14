@@ -120,4 +120,111 @@ public class CartPage {
       removeButtons = driver.findElements(By.xpath("//button[contains(., 'Remove')] | //a[contains(., 'Remove')]"));
     }
   }
+
+  /**
+   * Remove a specific product from cart by product name
+   *
+   * Example: removeProductByName("Titanium Implant")
+   *
+   * @param productName - Name of product to remove
+   * @throws InterruptedException if thread is interrupted
+   */
+  public void removeProductByName(String productName) throws InterruptedException {
+    navigateToCart();
+    List<WebElement> cartItems = getCartItems();
+
+    for (WebElement item : cartItems) {
+      try {
+        WebElement nameElement = item.findElement(PRODUCT_NAME_IN_CART);
+        String itemName = nameElement.getText().toLowerCase();
+
+        if (itemName.contains(productName.toLowerCase())) {
+          // Found the product, now find and click the Remove button for this item
+          List<WebElement> removeButtons = item.findElements(By.xpath(".//button[contains(., 'Remove')] | .//a[contains(., 'Remove')]"));
+
+          if (!removeButtons.isEmpty()) {
+            removeButtons.get(0).click();
+            Thread.sleep(1000);
+            return;
+          } else {
+            throw new RuntimeException("Remove button not found for product: " + productName);
+          }
+        }
+      } catch (Exception e) {
+        // Continue to next item
+      }
+    }
+
+    throw new RuntimeException("Product not found in cart: " + productName);
+  }
+
+  /**
+   * Remove a product from cart by its index position
+   *
+   * Example: removeProductByIndex(0) - removes first item
+   * Example: removeProductByIndex(1) - removes second item
+   *
+   * @param index - Position of product (0-based)
+   * @throws InterruptedException if thread is interrupted
+   */
+  public void removeProductByIndex(int index) throws InterruptedException {
+    navigateToCart();
+    List<WebElement> cartItems = getCartItems();
+
+    if (index < 0 || index >= cartItems.size()) {
+      throw new IndexOutOfBoundsException(
+          "Product index " + index + " out of range. Total products in cart: " + cartItems.size()
+      );
+    }
+
+    WebElement item = cartItems.get(index);
+
+    try {
+      List<WebElement> removeButtons = item.findElements(By.xpath(".//button[contains(., 'Remove')] | .//a[contains(., 'Remove')]"));
+
+      if (!removeButtons.isEmpty()) {
+        removeButtons.get(0).click();
+        Thread.sleep(1000);
+      } else {
+        throw new RuntimeException("Remove button not found for item at index: " + index);
+      }
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to remove product at index " + index + ": " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Get product name at specific index in cart
+   *
+   * @param index - Position of product (0-based)
+   * @return Product name or empty string if not found
+   */
+  public String getProductNameByIndex(int index) throws InterruptedException {
+    navigateToCart();
+    List<WebElement> cartItems = getCartItems();
+
+    if (index < 0 || index >= cartItems.size()) {
+      return "";
+    }
+
+    try {
+      WebElement item = cartItems.get(index);
+      WebElement nameElement = item.findElement(PRODUCT_NAME_IN_CART);
+      return nameElement.getText();
+    } catch (Exception e) {
+      return "";
+    }
+  }
+
+  /**
+   * Verify product exists at specific index in cart
+   *
+   * @param index - Position to check (0-based)
+   * @param expectedName - Expected product name
+   * @return true if product name matches at that index
+   */
+  public boolean verifyProductAtIndex(int index, String expectedName) throws InterruptedException {
+    String actualName = getProductNameByIndex(index);
+    return actualName.toLowerCase().contains(expectedName.toLowerCase());
+  }
 }
